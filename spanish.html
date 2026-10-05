@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vocabulario Español - Top Spanish Words Game</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            /* Spanish flag horizontal tricolor background: red, yellow (double height), red */
+            background-color: #aa151b;
+            background-image: linear-gradient(
+                to bottom,
+                #aa151b 0%,
+                #aa151b 25%,
+                #f1bf00 25%,
+                #f1bf00 75%,
+                #aa151b 75%,
+                #aa151b 100%
+            );
+            background-attachment: fixed;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .card {
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            border-top: 6px solid #f1bf00;
+        }
+        h1 {
+            color: #aa151b;
+            font-size: 24px;
+            margin-top: 0;
+        }
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            color: #002b49;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        .word-box {
+            background: #fff8e1;
+            border: 1px solid #ffe082;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .prompt-label {
+            font-size: 12px;
+            color: #8d6e63;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+        .word-display-area {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+        h2 {
+            font-size: 36px;
+            color: #002b49;
+            margin: 0;
+        }
+        .pronounce-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 24px;
+            padding: 0;
+            transition: transform 0.1s;
+        }
+        .pronounce-btn:active {
+            transform: scale(0.9);
+        }
+        .options-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .option-btn {
+            background-color: #fff;
+            border: 2px solid #dcdcdc;
+            padding: 12px;
+            font-size: 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+            color: #333;
+        }
+        .option-btn:hover:not(:disabled) {
+            background-color: #f5f5f5;
+            border-color: #002b49;
+            color: #002b49;
+        }
+        .option-btn.correct {
+            background-color: #2e7d32 !important;
+            color: white;
+            border-color: #2e7d32;
+        }
+        .option-btn.incorrect {
+            background-color: #aa151b !important;
+            color: white;
+            border-color: #aa151b;
+        }
+        .action-row {
+            display: flex;
+            gap: 10px;
+        }
+        .secondary-btn, .primary-btn {
+            flex: 1;
+            padding: 10px;
+            font-size: 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            border: none;
+        }
+        .secondary-btn {
+            background-color: #e0e0e0;
+            color: #333;
+        }
+        .secondary-btn:hover {
+            background-color: #d0d0d0;
+        }
+        .primary-btn {
+            background-color: #aa151b;
+            color: white;
+        }
+        .primary-btn:hover {
+            background-color: #8c1015;
+        }
+        .feedback {
+            margin-top: 15px;
+            font-weight: bold;
+            min-height: 24px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h1>🇪🇸 Vocabulario Español</h1>
+    <div style="font-size: 13px; color: #555; margin-bottom: 15px;">Goal: Get 10 Correct Answers!</div>
+
+    <div class="stats">
+        <span id="score-display">Correct: 0 / 10</span>
+        <span id="attempts-display">Attempts: 1</span>
+    </div>
+
+    <div class="word-box">
+        <div class="prompt-label">Translate this word:</div>
+        <div class="word-display-area">
+            <h2 id="current-word">el</h2>
+            <button class="pronounce-btn" onclick="playPronunciation()" title="Repeat Pronunciation">🔊</button>
+        </div>
+    </div>
+
+    <div class="options-grid" id="options-container">
+        <button class="option-btn" onclick="checkAnswer(this)">this</button>
+        <button class="option-btn" onclick="checkAnswer(this)">the</button>
+        <button class="option-btn" onclick="checkAnswer(this)">to</button>
+        <button class="option-btn" onclick="checkAnswer(this)">from</button>
+    </div>
+
+    <div class="action-row">
+        <button class="secondary-btn" id="hint-btn" onclick="useHint()">Hint (50/50)</button>
+        <button class="primary-btn" id="next-btn" onclick="nextWord()">Next Word</button>
+    </div>
+
+    <div class="feedback" id="feedback-msg"></div>
+</div>
+
+<script>
+    // Top Spanish Words Dataset
+    const vocabList = [
+        { spanish: "el", english: "the", options: ["a", "the", "this", "that"] },
+        { spanish: "de", english: "of / from", options: ["to", "of / from", "with", "by"] },
+        { spanish: "que", english: "that / what", options: ["who", "that / what", "where", "how"] },
+        { spanish: "y", english: "and", options: ["or", "but", "and", "because"] },
+        { spanish: "a", english: "to / at", options: ["from", "to / at", "in", "on"] },
+        { spanish: "en", english: "in / on", options: ["in / on", "under", "over", "behind"] },
+        { spanish: "un", english: "a / an", options: ["the", "some", "a / an", "any"] },
+        { spanish: "ser", english: "to be", options: ["to have", "to be", "to go", "to do"] },
+        { spanish: "se", english: "himself / herself", options: ["me", "you", "himself / herself", "them"] },
+        { spanish: "no", english: "no / not", options: ["yes", "no / not", "maybe", "always"] },
+        { spanish: "haber", english: "to have (auxiliary)", options: ["to have", "to hold", "to have (auxiliary)", "to own"] },
+        { spanish: "por", english: "for / by", options: ["to", "for / by", "with", "without"] },
+        { spanish: "con", english: "with", options: ["without", "with", "against", "toward"] },
+        { spanish: "su", english: "his / her / your", options: ["my", "our", "their", "his / her / your"] },
+        { spanish: "para", english: "for / in order to", options: ["by", "for / in order to", "from", "during"] },
+        { spanish: "como", english: "like / as / how", options: ["why", "when", "like / as / how", "where"] },
+        { spanish: "estar", english: "to be (location/state)", options: ["to stay", "to be (location/state)", "to feel", "to seem"] },
+        { spanish: "tener", english: "to have", options: ["to be", "to have", "to want", "to give"] },
+        { spanish: "le", english: "to him / to her", options: ["him", "her", "to him / to her", "them"] },
+        { spanish: "lo", english: "it / him", options: ["that", "it / him", "this", "them"] },
+        { spanish: "todo", english: "all / everything", options: ["none", "some", "all / everything", "much"] },
+        { spanish: "pero", english: "but", options: ["and", "or", "but", "because"] },
+        { spanish: "más", english: "more", options: ["less", "more", "much", "little"] },
+        { spanish: "hacer", english: "to do / to make", options: ["to make", "to do / to make", "to build", "to create"] },
+        { spanish: "o", english: "or", options: ["and", "or", "but", "nor"] },
+        { spanish: "poder", english: "to be able to / can", options: ["to want", "to know", "to be able to / can", "to must"] },
+        { spanish: "decir", english: "to say / to tell", options: ["to speak", "to say / to tell", "to ask", "to talk"] },
+        { spanish: "este", english: "this", options: ["that", "these", "this", "those"] },
+        { spanish: "ir", english: "to go", options: ["to come", "to go", "to walk", "to run"] },
+        { spanish: "otro", english: "other / another", options: ["same", "other / another", "different", "new"] },
+        { spanish: "ese", english: "that", options: ["this", "that", "these", "those"] },
+        { spanish: "la", english: "the (feminine)", options: ["a", "the (feminine)", "this", "some"] },
+        { spanish: "si", english: "if / yes", options: ["no", "if / yes", "maybe", "always"] },
+        { spanish: "me", english: "me", options: ["you", "him", "me", "us"] },
+        { spanish: "ya", english: "already / now", options: ["never", "already / now", "later", "soon"] },
+        { spanish: "ver", english: "to see", options: ["to look", "to watch", "to see", "to notice"] },
+        { spanish: "porque", english: "because", options: ["why", "because", "although", "so"] },
+        { spanish: "dar", english: "to give", options: ["to take", "to give", "to keep", "to receive"] },
+        { spanish: "cuando", english: "when", options: ["where", "how", "when", "why"] },
+        { spanish: "él", english: "he", options: ["she", "he", "they", "it"] },
+        { spanish: "muy", english: "very", options: ["much", "very", "little", "too"] },
+        { spanish: "sin", english: "without", options: ["with", "without", "within", "through"] },
+        { spanish: "vez", english: "time / instance", options: ["hour", "time / instance", "moment", "day"] },
+        { spanish: "mucho", english: "much / a lot", options: ["little", "some", "much / a lot", "none"] },
+        { spanish: "saber", english: "to know (facts)", options: ["to know (people)", "to know (facts)", "to learn", "to understand"] },
+        { spanish: "qué", english: "what?", options: ["who?", "what?", "where?", "when?"] },
+        { spanish: "sobre", english: "on / about", options: ["under", "on / about", "below", "beside"] },
+        { spanish: "mi", english: "my", options: ["your", "my", "his", "our"] },
+        { spanish: "alguno", english: "some / any", options: ["none", "some / any", "all", "every"] },
+        { spanish: "mismo", english: "same", options: ["different", "other", "same", "similar"] }
+    ];
+
+    let sessionQueue = [];
+    let lastWord = null;
+    let currentData = null;
+    let correctCount = 0;
+    let attemptsCount = 1;
+    let answeredCurrent = false;
+
+    // Shuffle helper (Fisher-Yates)
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
+
+    // Initialize or refill the session queue without back-to-back repeats
+    function getNextWordData() {
+        if (sessionQueue.length === 0) {
+            let freshQueue;
+            do {
+                freshQueue = shuffleArray([...vocabList]);
+            } while (lastWord && freshQueue[freshQueue.length - 1].spanish === lastWord.spanish);
+            sessionQueue = freshQueue;
+        }
+        currentData = sessionQueue.pop();
+        lastWord = currentData;
+        return currentData;
+    }
+
+    function playPronunciation() {
+        const wordText = document.getElementById('current-word').textContent;
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(wordText);
+            utterance.lang = 'es-ES';
+            utterance.rate = 0.9;
+            window.speechSynthesis.speak(utterance);
+        }
+    }
+
+    function loadWord() {
+        currentData = getNextWordData();
+        document.getElementById('current-word').textContent = currentData.spanish;
+        
+        const optionButtons = document.querySelectorAll('.option-btn');
+        optionButtons.forEach((btn, index) => {
+            btn.textContent = currentData.options[index];
+            btn.disabled = false;
+            btn.classList.remove('correct', 'incorrect');
+            btn.style.visibility = 'visible';
+        });
+
+        document.getElementById('feedback-msg').textContent = '';
+        document.getElementById('hint-btn').disabled = false;
+        answeredCurrent = false;
+
+        playPronunciation();
+    }
+
+    function checkAnswer(button) {
+        if (answeredCurrent) return;
+        answeredCurrent = true;
+
+        const selectedText = button.textContent;
+        const feedback = document.getElementById('feedback-msg');
+
+        if (selectedText === currentData.english) {
+            button.classList.add('correct');
+            feedback.style.color = '#2e7d32';
+            feedback.textContent = '¡Correcto! (Correct!)';
+            correctCount++;
+            document.getElementById('score-display').textContent = `Correct: ${correctCount} / 10`;
+        } else {
+            button.classList.add('incorrect');
+            feedback.style.color = '#aa151b';
+            feedback.textContent = `¡Incorrecto! (Means: ${currentData.english})`;
+            
+            document.querySelectorAll('.option-btn').forEach(btn => {
+                if (btn.textContent === currentData.english) {
+                    btn.classList.add('correct');
+                }
+            });
+        }
+    }
+
+    function nextWord() {
+        attemptsCount++;
+        document.getElementById('attempts-display').textContent = `Attempts: ${attemptsCount}`;
+        loadWord();
+    }
+
+    function useHint() {
+        if (answeredCurrent) return;
+        const optionButtons = document.querySelectorAll('.option-btn');
+        
+        let hiddenCount = 0;
+        optionButtons.forEach(btn => {
+            if (btn.textContent !== currentData.english && hiddenCount < 2) {
+                btn.style.visibility = 'hidden';
+                hiddenCount++;
+            }
+        });
+        document.getElementById('hint-btn').disabled = true;
+    }
+
+    // Run pronunciation on initial page load
+    window.onload = () => {
+        loadWord();
+    };
+</script>
+
+</body>
+</html>
