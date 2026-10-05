@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Norsk Ordforråd - 300 Common Words Game</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            /* Norwegian flag Nordic cross background pattern using linear gradients */
+            background-color: #ba0c2f;
+            background-image: 
+                /* Vertical blue stripe */
+                linear-gradient(90deg, transparent 42%, #00205b 42%, #00205b 58%, transparent 58%),
+                /* Horizontal blue stripe */
+                linear-gradient(0deg, transparent 42%, #00205b 42%, #00205b 58%, transparent 58%),
+                /* Vertical white cross border */
+                linear-gradient(90deg, transparent 38%, #ffffff 38%, #ffffff 62%, transparent 62%),
+                /* Horizontal white cross border */
+                linear-gradient(0deg, transparent 38%, #ffffff 38%, #ffffff 62%, transparent 62%),
+                /* Base red flag color */
+                linear-gradient(135deg, #ba0c2f 0%, #90001f 100%);
+            background-attachment: fixed;
+            background-size: cover;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .card {
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            border-top: 6px solid #00205b;
+        }
+        h1 {
+            color: #ba0c2f;
+            font-size: 24px;
+            margin-top: 0;
+        }
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            color: #00205b;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        .word-box {
+            background: #f0f4f8;
+            border: 1px solid #d0dbe5;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .prompt-label {
+            font-size: 12px;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+        .word-display-area {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+        h2 {
+            font-size: 36px;
+            color: #111;
+            margin: 0;
+        }
+        .pronounce-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 24px;
+            padding: 0;
+            transition: transform 0.1s;
+        }
+        .pronounce-btn:active {
+            transform: scale(0.9);
+        }
+        .options-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .option-btn {
+            background-color: #fff;
+            border: 2px solid #ccc;
+            padding: 12px;
+            font-size: 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+            color: #333;
+        }
+        .option-btn:hover:not(:disabled) {
+            background-color: #f0f0f0;
+            border-color: #00205b;
+            color: #00205b;
+        }
+        .option-btn.correct {
+            background-color: #2e7d32 !important;
+            color: white;
+            border-color: #2e7d32;
+        }
+        .option-btn.incorrect {
+            background-color: #ba0c2f !important;
+            color: white;
+            border-color: #ba0c2f;
+        }
+        .action-row {
+            display: flex;
+            gap: 10px;
+        }
+        .secondary-btn, .primary-btn {
+            flex: 1;
+            padding: 10px;
+            font-size: 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            border: none;
+        }
+        .secondary-btn {
+            background-color: #e0e0e0;
+            color: #333;
+        }
+        .secondary-btn:hover {
+            background-color: #d0d0d0;
+        }
+        .primary-btn {
+            background-color: #00205b;
+            color: white;
+        }
+        .primary-btn:hover {
+            background-color: #001336;
+        }
+        .feedback {
+            margin-top: 15px;
+            font-weight: bold;
+            min-height: 24px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h1>🇳🇴 Norsk Ordforråd</h1>
+    <div style="font-size: 13px; color: #555; margin-bottom: 15px;">Goal: Get 10 Correct Answers!</div>
+
+    <div class="stats">
+        <span id="score-display">Correct: 0 / 10</span>
+        <span id="attempts-display">Attempts: 1</span>
+    </div>
+
+    <div class="word-box">
+        <div class="prompt-label">Translate this word:</div>
+        <div class="word-display-area">
+            <h2 id="current-word">og</h2>
+            <button class="pronounce-btn" onclick="playPronunciation()" title="Repeat Pronunciation">🔊</button>
+        </div>
+    </div>
+
+    <div class="options-grid" id="options-container">
+        <button class="option-btn" onclick="checkAnswer(this)">and</button>
+        <button class="option-btn" onclick="checkAnswer(this)">or</button>
+        <button class="option-btn" onclick="checkAnswer(this)">but</button>
+        <button class="option-btn" onclick="checkAnswer(this)">because</button>
+    </div>
+
+    <div class="action-row">
+        <button class="secondary-btn" id="hint-btn" onclick="useHint()">Hint (50/50)</button>
+        <button class="primary-btn" id="next-btn" onclick="nextWord()">Next Word</button>
+    </div>
+
+    <div class="feedback" id="feedback-msg"></div>
+</div>
+
+<script>
+    // Common Norwegian Words Dataset
+    const vocabList = [
+        { norwegian: "og", english: "and", options: ["and", "or", "but", "because"] },
+        { norwegian: "i", english: "in", options: ["on", "in", "at", "under"] },
+        { norwegian: "det", english: "it / that", options: ["he", "she", "it / that", "they"] },
+        { norwegian: "som", english: "which / who", options: ["which / who", "what", "where", "when"] },
+        { norwegian: "til", english: "to", options: ["from", "to", "with", "for"] },
+        { norwegian: "en", english: "a / an", options: ["the", "a / an", "some", "any"] },
+        { norwegian: "er", english: "is / are", options: ["was", "is / are", "will be", "has"] },
+        { norwegian: "på", english: "on / at", options: ["in", "on / at", "over", "under"] },
+        { norwegian: "av", english: "of / by", options: ["of / by", "from", "with", "out"] },
+        { norwegian: "for", english: "for / because", options: ["for / because", "against", "without", "during"] },
+        { norwegian: "at", english: "that", options: ["this", "that", "what", "how"] },
+        { norwegian: "med", english: "with", options: ["without", "with", "through", "by"] },
+        { norwegian: "han", english: "he", options: ["she", "he", "they", "it"] },
+        { norwegian: "ikke", english: "not", options: ["yes", "not", "maybe", "always"] },
+        { norwegian: "den", english: "it / that one", options: ["this one", "it / that one", "these", "those"] },
+        { norwegian: "et", english: "a / an (neuter)", options: ["the", "a / an (neuter)", "some", "none"] },
+        { norwegian: "har", english: "have", options: ["had", "have", "will have", "has had"] },
+        { norwegian: "som", english: "as / like", options: ["as / like", "than", "so", "such"] },
+        { norwegian: "de", english: "they", options: ["we", "you", "they", "he"] },
+        { norwegian: "fra", english: "from", options: ["to", "from", "into", "out"] },
+        { norwegian: "vi", english: "we", options: ["you", "they", "we", "he"] },
+        { norwegian: "så", english: "so / then", options: ["so / then", "but", "because", "although"] },
+        { norwegian: "seg", english: "himself / herself", options: ["himself / herself", "me", "us", "them"] },
+        { norwegian: "men", english: "but", options: ["and", "or", "but", "so"] },
+        { norwegian: "var", english: "was", options: ["is", "was", "will be", "has been"] },
+        { norwegian: "om", english: "about / if", options: ["about / if", "over", "under", "through"] },
+        { norwegian: "etter", english: "after / behind", options: ["before", "after / behind", "during", "while"] },
+        { norwegian: "eller", english: "or", options: ["and", "or", "but", "nor"] },
+        { norwegian: "hun", english: "she", options: ["he", "she", "it", "they"] },
+        { norwegian: "vil", english: "want / will", options: ["can", "must", "want / will", "should"] },
+        { norwegian: "skal", english: "shall / should", options: ["shall / should", "can", "may", "might"] },
+        { norwegian: "kan", english: "can", options: ["cannot", "can", "must", "will"] },
+        { norwegian: "blir", english: "becomes / gets", options: ["stays", "becomes / gets", "remains", "stops"] },
+        { norwegian: "år", english: "year", options: ["day", "month", "year", "week"] },
+        { norwegian: "tid", english: "time", options: ["time", "space", "moment", "hour"] },
+        { norwegian: "få", english: "get / receive", options: ["give", "take", "get / receive", "lose"] },
+        { norwegian: "over", english: "over / above", options: ["under", "over / above", "beside", "below"] },
+        { norwegian: "bare", english: "only / just", options: ["always", "never", "only / just", "sometimes"] },
+        { norwegian: "også", english: "also / too", options: ["neither", "also / too", "either", "nor"] },
+        { norwegian: "se", english: "see", options: ["hear", "see", "touch", "smell"] },
+        { norwegian: "ny", english: "new", options: ["old", "new", "fresh", "stale"] },
+        { norwegian: "stor", english: "big / large", options: ["small", "big / large", "tiny", "short"] },
+        { norwegian: "liten", english: "small", options: ["big", "large", "small", "huge"] },
+        { norwegian: "god", english: "good", options: ["bad", "good", "poor", "worse"] },
+        { norwegian: "må", english: "must", options: ["might", "can", "must", "should"] },
+        { norwegian: "komme", english: "come", options: ["go", "come", "leave", "stay"] },
+        { norwegian: "ha", english: "have", options: ["lose", "have", "want", "give"] },
+        { norwegian: "gi", english: "give", options: ["take", "keep", "give", "receive"] },
+        { norwegian: "si", english: "say", options: ["listen", "say", "whisper", "shout"] },
+        { norwegian: "vite", english: "know", options: ["guess", "know", "wonder", "forget"] },
+        { norwegian: "bil", english: "car", options: ["plane", "train", "car", "bike"] },
+        { norwegian: "hund", english: "dog", options: ["cat", "dog", "bird", "fish"] },
+        { norwegian: "hus", english: "house", options: ["car", "house", "boat", "plane"] },
+        { norwegian: "katt", english: "cat", options: ["cat", "dog", "horse", "pig"] },
+        { norwegian: "del", english: "part", options: ["this", "small", "first", "part"] }
+    ];
+
+    let sessionQueue = [];
+    let lastWord = null;
+    let currentData = null;
+    let correctCount = 0;
+    let attemptsCount = 1;
+    let answeredCurrent = false;
+
+    // Shuffle helper (Fisher-Yates)
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
+
+    // Initialize or refill the session queue without back-to-back repeats
+    function getNextWordData() {
+        if (sessionQueue.length === 0) {
+            let freshQueue;
+            do {
+                freshQueue = shuffleArray([...vocabList]);
+            } while (lastWord && freshQueue[freshQueue.length - 1].norwegian === lastWord.norwegian);
+            sessionQueue = freshQueue;
+        }
+        currentData = sessionQueue.pop();
+        lastWord = currentData;
+        return currentData;
+    }
+
+    function playPronunciation() {
+        const wordText = document.getElementById('current-word').textContent;
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(wordText);
+            utterance.lang = 'nb-NO';
+            utterance.rate = 0.9;
+            window.speechSynthesis.speak(utterance);
+        }
+    }
+
+    function loadWord() {
+        currentData = getNextWordData();
+        document.getElementById('current-word').textContent = currentData.norwegian;
+        
+        const optionButtons = document.querySelectorAll('.option-btn');
+        optionButtons.forEach((btn, index) => {
+            btn.textContent = currentData.options[index];
+            btn.disabled = false;
+            btn.classList.remove('correct', 'incorrect');
+            btn.style.visibility = 'visible';
+        });
+
+        document.getElementById('feedback-msg').textContent = '';
+        document.getElementById('hint-btn').disabled = false;
+        answeredCurrent = false;
+
+        playPronunciation();
+    }
+
+    function checkAnswer(button) {
+        if (answeredCurrent) return;
+        answeredCurrent = true;
+
+        const selectedText = button.textContent;
+        const feedback = document.getElementById('feedback-msg');
+
+        if (selectedText === currentData.english) {
+            button.classList.add('correct');
+            feedback.style.color = '#2e7d32';
+            feedback.textContent = 'Riktig! (Correct!)';
+            correctCount++;
+            document.getElementById('score-display').textContent = `Correct: ${correctCount} / 10`;
+        } else {
+            button.classList.add('incorrect');
+            feedback.style.color = '#ba0c2f';
+            feedback.textContent = `Feil! (Incorrect. It means: ${currentData.english})`;
+            
+            document.querySelectorAll('.option-btn').forEach(btn => {
+                if (btn.textContent === currentData.english) {
+                    btn.classList.add('correct');
+                }
+            });
+        }
+    }
+
+    function nextWord() {
+        attemptsCount++;
+        document.getElementById('attempts-display').textContent = `Attempts: ${attemptsCount}`;
+        loadWord();
+    }
+
+    function useHint() {
+        if (answeredCurrent) return;
+        const optionButtons = document.querySelectorAll('.option-btn');
+        
+        let hiddenCount = 0;
+        optionButtons.forEach(btn => {
+            if (btn.textContent !== currentData.english && hiddenCount < 2) {
+                btn.style.visibility = 'hidden';
+                hiddenCount++;
+            }
+        });
+        document.getElementById('hint-btn').disabled = true;
+    }
+
+    // Run pronunciation on initial page load
+    window.onload = () => {
+        loadWord();
+    };
+</script>
+
+</body>
+</html>
